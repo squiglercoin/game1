@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Squig Catcher Game</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: #fff;
+      text-align: center;
+    }
+    canvas {
+      border: 4px solid #ffd700;
+      background-color: #000;
+      display: block;
+      margin: 20px auto;
+    }
+    #info {
+      padding: 2rem;
+      background: #1e1e1e;
+      color: #ddd;
+    }
+    button {
+      font-size: 1rem;
+      padding: 0.7rem 1.5rem;
+      margin: 1rem;
+      background: #ffd700;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #walletInfo {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #90ee90;
+    }
+  </style>
+</head>
+<body>
+  <h1>🪙 Squig Catcher</h1>
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <button onclick="startGame()">Start / Restart Game</button>
+  <button onclick="connectWallet()">Connect Wallet</button>
+  <div id="walletInfo"></div>
+  <div id="info">
+    <h2>About $SQUIG</h2>
+    <p>$SQUIG is the wormy meme coin built for fun, community, and rewards. Play the game and earn real SQUIGLER COINS instantly if your wallet is connected and you score 100 or more!</p>
+    <p><strong>Token Address:</strong> 0x2e4D74F8b36Ef4d38c9679A9EB451D9a25af40ac</p>
+    <p><a href="https://squiglercoin.github.io/websait2/" target="_blank" style="color: #ffd700;">Visit Main Website</a></p>
+  </div>
+
+  <script>
+    let canvas = document.getElementById("gameCanvas");
+    let ctx = canvas.getContext("2d");
+    let player = { x: 180, y: 560, width: 40, height: 20 };
+    let coins = [];
+    let score = 0;
+    let isRunning = false;
+    let walletAddress = null;
+
+    function drawPlayer() {
+      ctx.fillStyle = "#ffd700";
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
+
+    function drawCoins() {
+      ctx.fillStyle = "#00ff00";
+      coins.forEach(c => ctx.fillRect(c.x, c.y, 10, 10));
+    }
+
+    function updateCoins() {
+      coins.forEach(c => c.y += 4);
+      coins = coins.filter(c => c.y < canvas.height);
+    }
+
+    function spawnCoin() {
+      coins.push({ x: Math.random() * (canvas.width - 10), y: 0 });
+    }
+
+    function detectCollision() {
+      coins = coins.filter(c => {
+        let hit = c.x < player.x + player.width && c.x + 10 > player.x && c.y + 10 > player.y && c.y < player.y + player.height;
+        if (hit) score++;
+        return !hit;
+      });
+    }
+
+    function drawScore() {
+      ctx.fillStyle = "white";
+      ctx.font = "16px Arial";
+      ctx.fillText("Score: " + score, 10, 20);
+    }
+
+    function gameLoop() {
+      if (!isRunning) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPlayer();
+      drawCoins();
+      updateCoins();
+      detectCollision();
+      drawScore();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function startGame() {
+      coins = [];
+      score = 0;
+      isRunning = true;
+      gameLoop();
+      setInterval(spawnCoin, 1000);
+    }
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowLeft" && player.x > 0) player.x -= 20;
+      if (e.key === "ArrowRight" && player.x + player.width < canvas.width) player.x += 20;
+    });
+
+    async function connectWallet() {
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+          walletAddress = accounts[0];
+          document.getElementById("walletInfo").textContent = "Wallet connected: " + walletAddress;
+        } catch (err) {
+          alert("Connection failed.");
+        }
+      } else {
+        alert("Please install MetaMask.");
+      }
+    }
+
+    setInterval(() => {
+      if (score >= 100 && walletAddress) {
+        alert("Congrats! You scored 100+! An airdrop will be sent to: " + walletAddress);
+        score = 0;
+        // Optional: send walletAddress to backend API
+      }
+    }, 3000);
+  </script>
+</body>
+</html>
